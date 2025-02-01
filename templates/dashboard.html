@@ -24,26 +24,36 @@
 
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <!-- Quick Stats Column -->
+        <!-- Stock Watchlist Column -->
         <div class="md:col-span-3 space-y-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Quick Stats</h2>
+                    <h2 class="text-lg font-semibold">Stock Watchlist</h2>
+                    <button onclick="openWatchlistModal()" 
+                            class="text-blue-600 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </button>
                 </div>
-                <ul class="space-y-2">
-                    <li class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                        <span class="text-sm text-gray-600 dark:text-gray-400">Total Logins</span>
-                        <p class="text-lg font-semibold">245</p>
-                    </li>
-                    <li class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                        <span class="text-sm text-gray-600 dark:text-gray-400">Last Login</span>
-                        <p class="text-lg font-semibold">2 hours ago</p>
-                    </li>
-                    <li class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                        <span class="text-sm text-gray-600 dark:text-gray-400">Account Status</span>
-                        <p class="text-lg font-semibold text-green-500">Active</p>
-                    </li>
-                </ul>
+                <div id="watchlistContainer" class="space-y-2">
+                    {% for item in watchlist %}
+                    <div id="watchlist-item-{{ item.id }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+                        <span class="font-medium">{{ item.company_name }}</span>
+                        <button onclick="deleteWatchlistItem({{ item.id }})" 
+                                class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% if not watchlist %}
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-center text-gray-500 dark:text-gray-400">
+                        No stocks added yet
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -80,28 +90,126 @@
                     <p class="text-lg font-semibold">High</p>
                 </div>
             </div>
-
-            <!-- Recent Activity -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
-                <div class="space-y-4">
-                    <div class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <p class="font-medium">Profile Updated</p>
-                        <div class="flex items-center gap-2 mt-1 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">2 hours ago</span>
-                            <span class="text-blue-500">• Security Settings</span>
-                        </div>
-                    </div>
-                    <div class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <p class="font-medium">Password Changed</p>
-                        <div class="flex items-center gap-2 mt-1 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">1 day ago</span>
-                            <span class="text-green-500">• Completed</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- Add to Watchlist Modal -->
+<div id="watchlistModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
+        <h3 class="text-xl font-bold mb-4">Add Company to Watchlist</h3>
+        <form id="watchlistForm" class="space-y-4">
+            <div>
+                <label for="company_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Company Name
+                </label>
+                <input type="text" 
+                       id="company_name" 
+                       name="company_name" 
+                       required 
+                       class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" 
+                        onclick="closeWatchlistModal()" 
+                        class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    Add
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Watchlist Modal Functions
+    function openWatchlistModal() {
+        document.getElementById('watchlistModal').classList.remove('hidden');
+    }
+
+    function closeWatchlistModal() {
+        document.getElementById('watchlistModal').classList.add('hidden');
+        document.getElementById('watchlistForm').reset();
+    }
+
+    // Handle form submission
+    document.getElementById('watchlistForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        try {
+            const response = await fetch('/watchlist/add', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Add new item to the list
+                const container = document.getElementById('watchlistContainer');
+                const newItem = document.createElement('div');
+                newItem.id = `watchlist-item-${data.id}`;
+                newItem.className = 'p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center';
+                newItem.innerHTML = `
+                    <span class="font-medium">${data.company_name}</span>
+                    <button onclick="deleteWatchlistItem(${data.id})" 
+                            class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                `;
+                
+                // Remove "No stocks added yet" message if it exists
+                const noStocksMessage = container.querySelector('div:last-child');
+                if (noStocksMessage && noStocksMessage.textContent.trim() === 'No stocks added yet') {
+                    noStocksMessage.remove();
+                }
+                
+                container.insertBefore(newItem, container.firstChild);
+                closeWatchlistModal();
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            alert('An error occurred while adding to watchlist');
+        }
+    });
+
+    // Delete watchlist item
+    async function deleteWatchlistItem(itemId) {
+        if (!confirm('Are you sure you want to remove this company from your watchlist?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/watchlist/delete/${itemId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                const item = document.getElementById(`watchlist-item-${itemId}`);
+                item.remove();
+                
+                // Check if watchlist is empty and add placeholder
+                const container = document.getElementById('watchlistContainer');
+                if (container.children.length === 0) {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-center text-gray-500 dark:text-gray-400';
+                    placeholder.textContent = 'No stocks added yet';
+                    container.appendChild(placeholder);
+                }
+            } else {
+                const data = await response.json();
+                alert(data.error || 'An error occurred while deleting');
+            }
+        } catch (error) {
+            alert('An error occurred while deleting from watchlist');
+        }
+    }
+</script>
+{% endblock content %}
