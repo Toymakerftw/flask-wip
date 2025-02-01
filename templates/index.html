@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="welcome-message">
-        <h1>Welcome to the Flask Auth App</h1>
-        <div class="auth-buttons">
-            <a href="{{ url_for('signup') }}" class="btn">Sign Up</a>
-            <a href="{{ url_for('signin') }}" class="btn">Sign In</a>
+    <div class="text-center py-16">
+        <h1 class="text-4xl font-bold text-gray-900 mb-8">Welcome to the Flask Auth App</h1>
+        <div class="space-x-4">
+            <a href="{{ url_for('signup') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-150 ease-in-out">
+                Sign Up
+            </a>
+            <a href="{{ url_for('signin') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-150 ease-in-out">
+                Sign In
+            </a>
         </div>
     </div>
 {% endblock %}
