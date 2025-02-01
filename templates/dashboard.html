@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <header class="dashboard-header">
+        <div class="header-info">
+            <div>
+                <h2>Welcome, {{ username }}!</h2>
+            </div>
+            <div>
+                <span id="current-date"></span>
+                <span id="current-time"></span>
+            </div>
+        </div>
+        <form action="{{ url_for('logout') }}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </header>
+
+    <div class="dashboard-content">
+        <h3>Your Dashboard</h3>
+        <!-- Add your dashboard content here -->
+    </div>
+{% endblock %}

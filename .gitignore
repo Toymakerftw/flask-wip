@@ -1,0 +1,88 @@
+# Python and Flask specific files
+__pycache__/
+*.pyc
+*.pyd
+.DS_Store  # macOS specific
+*.egg
+*.dist
+build/
+develop-eggs/
+parts/
+sdist/
+var/
+*.env  # Keep environment variables separate
+instance/ # Flask instance folder (often contains sensitive data)
+
+# General Python and other files
+.venv  # Virtual environment
+venv/
+env/
+.idea/  # PyCharm project files
+.project
+.settings
+*.log
+*.swp
+*~
+.cache
+
+# OS Specific
+.vscode/ # VS Code files (optional, if you want to share settings)
+.idea/    # IntelliJ IDEA files (optional)
+.mypy_cache/ # mypy cache
+
+# Distribution folders
+dist/*
+*.whl
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor and IDE files (customize as needed)
+.idea/*
+.vscode/*
+*.sublime-project
+*.sublime-workspace
+
+# Logs and data files (customize as needed)
+*.log
+*.db
+*.sqlite
+data/  # Or wherever you keep data that shouldn't be in git
+uploads/ # Or wherever you keep uploads
+
+# Temporary files
+*~
+\#*
+*.tmp
+
+# Files that should not be tracked by Git
+.gitignore  # This file itself (usually okay to keep)
+.gitattributes
+
+# Flask-related (adjust if you have specific files)
+instance/sessions/  # If you use sessions stored on disk
+instance/cache/     # If you use caching stored on disk
+
+# If you use a requirements file, you generally *don't* ignore it
+# requirements.txt
+# requirements.in (if you use pip-tools)
+
+# Example for a file that should be generated
+# config.py  # If config.py is generated, add it here. If it's manually created and needed, REMOVE it from .gitignore
+
+# If you use Docker
+docker-compose.override.yml
+.dockerenv
+
+# If you use a Makefile
+.make.out
+
+# If you use a frontend build tool (e.g., npm, yarn)
+node_modules/
+.yarnrc
+
+# If you have sensitive information that should NEVER be committed
+secrets.json  # Or whatever file name you use for sensitive info.  NEVER commit secrets!
+private_key.pem # Example private key - NEVER commit private keys!
