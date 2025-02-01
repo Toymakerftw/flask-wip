@@ -7,15 +7,24 @@
         <div>
             <h1 class="text-2xl font-bold tracking-tight">Welcome, {{ username }}</h1>
             <p class="text-gray-600 dark:text-gray-400 mt-1">
-                Dashboard overview for 
+                Market Overview -
                 <span id="current-date" class="font-medium text-gray-900 dark:text-gray-200"></span>
                 <span id="current-time" class="font-medium text-gray-900 dark:text-gray-200 ml-2"></span>
             </p>
         </div>
         <div class="flex items-center gap-3">
+            <button onclick="window.dashboardApp.refreshWatchlistData()"
+                    class="text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-900/20 dark:hover:bg-blue-900/30">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh Data
+                </span>
+            </button>
             <form action="{{ url_for('logout') }}" method="post">
                 <button type="submit" 
-                    class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
+                        class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
                     Logout
                 </button>
             </form>
@@ -25,69 +34,135 @@
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         <!-- Stock Watchlist Column -->
-        <div class="md:col-span-3 space-y-6">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Stock Watchlist</h2>
-                    <button onclick="openWatchlistModal()" 
-                            class="text-blue-600 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                    </button>
-                </div>
-                <div id="watchlistContainer" class="space-y-2">
-                    {% for item in watchlist %}
-                    <div id="watchlist-item-{{ item.id }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-                        <span class="font-medium">{{ item.company_name }}</span>
-                        <button onclick="deleteWatchlistItem({{ item.id }})" 
-                                class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        <div class="md:col-span-4 space-y-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold">Stock Watchlist</h2>
+                        <button onclick="window.dashboardApp.openWatchlistModal()" 
+                                class="text-blue-600 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
                         </button>
                     </div>
+                </div>
+                
+                <div id="watchlistContainer" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for item in watchlist %}
+                    <div id="watchlist-item-{{ item.id }}" class="p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-medium text-gray-900 dark:text-gray-100">{{ item.company_name }}</h3>
+                                {% if company_data.get(item.company_name) %}
+                                    {% set data = company_data[item.company_name] %}
+                                    {% if not data.error %}
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ data.ticker }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center gap-3">
+                                {% if company_data.get(item.company_name) %}
+                                    {% set data = company_data[item.company_name] %}
+                                    {% if not data.error %}
+                                        <div class="text-right">
+                                            <div class="font-medium">
+                                                ${{ data.stock_data.current_price | round(2) }}
+                                            </div>
+                                            <div class="text-sm {% if data.stock_data.percent_change > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                                                {{ data.stock_data.percent_change | round(2) }}%
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                                <button onclick="window.dashboardApp.deleteWatchlistItem(item.id)"
+                                        class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {% if company_data.get(item.company_name) %}
+                            {% set data = company_data[item.company_name] %}
+                            {% if not data.error %}
+                                <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <div class="text-gray-600 dark:text-gray-400">RSI</div>
+                                        <div class="font-medium">{{ data.stock_data.technical_indicators.rsi | round(2) }}</div>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <div class="text-gray-600 dark:text-gray-400">Volatility (30d)</div>
+                                        <div class="font-medium">{{ (data.stock_data.technical_indicators.volatility_30d * 100) | round(2) }}%</div>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <div class="text-gray-600 dark:text-gray-400">MACD</div>
+                                        <div class="font-medium">{{ data.stock_data.technical_indicators.macd | round(3) }}</div>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <div class="text-gray-600 dark:text-gray-400">Signal</div>
+                                        <div class="font-medium">{{ data.stock_data.technical_indicators.macd_signal | round(3) }}</div>
+                                    </div>
+                                </div>
+
+                                {% if data.news %}
+                                    <div class="mt-3">
+                                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Latest News</h4>
+                                        <div class="space-y-2">
+                                            {% for article in data.news[:2] %}
+                                                <a href="{{ article.link }}" target="_blank" 
+                                                   class="block p-2 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                        {{ article.title[:75] }}{% if article.title|length > 75 %}...{% endif %}
+                                                    </div>
+                                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                        {{ article.date }}
+                                                    </div>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="mt-2 text-sm text-red-500">
+                                    Error loading data: {{ data.error }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     {% endfor %}
                     {% if not watchlist %}
-                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-center text-gray-500 dark:text-gray-400">
-                        No stocks added yet
-                    </div>
+                        <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                            No stocks added yet
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div class="md:col-span-9 space-y-6">
-            <!-- Profile Overview -->
+        <div class="md:col-span-8 space-y-6">
+            <!-- Market Overview -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <div class="flex flex-wrap items-center gap-4 justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold">Profile Overview</h2>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-gray-600 dark:text-gray-400">Member since: Jan 2024</span>
-                        </div>
+                <h2 class="text-lg font-semibold mb-4">Market Overview</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Stocks Tracked</div>
+                        <div class="text-2xl font-semibold mt-1">{{ watchlist|length }}</div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Metrics Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Sessions</p>
-                    <p class="text-lg font-semibold">1,234</p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Session Time</p>
-                    <p class="text-lg font-semibold">25m</p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Last Active</p>
-                    <p class="text-lg font-semibold">Now</p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Security Level</p>
-                    <p class="text-lg font-semibold">High</p>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Latest Update</div>
+                        <div class="text-2xl font-semibold mt-1" id="lastUpdate">-</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Gainers</div>
+                        <div class="text-2xl font-semibold mt-1 text-green-500" id="gainersCount">-</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Losers</div>
+                        <div class="text-2xl font-semibold mt-1 text-red-500" id="losersCount">-</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,7 +170,7 @@
 </div>
 
 <!-- Add to Watchlist Modal -->
-<div id="watchlistModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+<div id="watchlistModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
         <h3 class="text-xl font-bold mb-4">Add Company to Watchlist</h3>
         <form id="watchlistForm" class="space-y-4">
@@ -111,7 +186,7 @@
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" 
-                        onclick="closeWatchlistModal()" 
+                        onclick="window.dashboardApp.closeWatchlistModal()"
                         class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                     Cancel
                 </button>
@@ -123,93 +198,4 @@
         </form>
     </div>
 </div>
-
-<script>
-    // Watchlist Modal Functions
-    function openWatchlistModal() {
-        document.getElementById('watchlistModal').classList.remove('hidden');
-    }
-
-    function closeWatchlistModal() {
-        document.getElementById('watchlistModal').classList.add('hidden');
-        document.getElementById('watchlistForm').reset();
-    }
-
-    // Handle form submission
-    document.getElementById('watchlistForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        try {
-            const response = await fetch('/watchlist/add', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                // Add new item to the list
-                const container = document.getElementById('watchlistContainer');
-                const newItem = document.createElement('div');
-                newItem.id = `watchlist-item-${data.id}`;
-                newItem.className = 'p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center';
-                newItem.innerHTML = `
-                    <span class="font-medium">${data.company_name}</span>
-                    <button onclick="deleteWatchlistItem(${data.id})" 
-                            class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                    </button>
-                `;
-                
-                // Remove "No stocks added yet" message if it exists
-                const noStocksMessage = container.querySelector('div:last-child');
-                if (noStocksMessage && noStocksMessage.textContent.trim() === 'No stocks added yet') {
-                    noStocksMessage.remove();
-                }
-                
-                container.insertBefore(newItem, container.firstChild);
-                closeWatchlistModal();
-            } else {
-                alert(data.error);
-            }
-        } catch (error) {
-            alert('An error occurred while adding to watchlist');
-        }
-    });
-
-    // Delete watchlist item
-    async function deleteWatchlistItem(itemId) {
-        if (!confirm('Are you sure you want to remove this company from your watchlist?')) {
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/watchlist/delete/${itemId}`, {
-                method: 'DELETE'
-            });
-            
-            if (response.ok) {
-                const item = document.getElementById(`watchlist-item-${itemId}`);
-                item.remove();
-                
-                // Check if watchlist is empty and add placeholder
-                const container = document.getElementById('watchlistContainer');
-                if (container.children.length === 0) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-center text-gray-500 dark:text-gray-400';
-                    placeholder.textContent = 'No stocks added yet';
-                    container.appendChild(placeholder);
-                }
-            } else {
-                const data = await response.json();
-                alert(data.error || 'An error occurred while deleting');
-            }
-        } catch (error) {
-            alert('An error occurred while deleting from watchlist');
-        }
-    }
-</script>
 {% endblock content %}
