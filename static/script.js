@@ -27,11 +27,11 @@ const apiService = {
         try {
             const response = await fetch(`${CONFIG.BASE_URL}${endpoint}`, options);
             const data = await response.json();
-            
+
             if (!response.ok) {
                 throw new Error(data.error || 'Request failed');
             }
-            
+
             return data;
         } catch (error) {
             console.error('API Error:', error);
@@ -81,14 +81,14 @@ const uiUpdater = {
     updateMarketOverview(data = {}) {
         let gainers = 0;
         let losers = 0;
-        
+
         Object.values(data).forEach(info => {
             if (info.stock_data?.percent_change) {
                 if (info.stock_data.percent_change > 0) gainers++;
                 else if (info.stock_data.percent_change < 0) losers++;
             }
         });
-        
+
         if (elements.gainersCount) elements.gainersCount.textContent = gainers;
         if (elements.losersCount) elements.losersCount.textContent = losers;
         if (elements.lastUpdate) elements.lastUpdate.textContent = new Date().toLocaleTimeString();
@@ -102,10 +102,10 @@ const uiUpdater = {
                     <p class="text-sm text-gray-600 dark:text-gray-400">Loading data...</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="window.dashboardApp.deleteWatchlistItem(${data.id})" 
+                    <button onclick="window.dashboardApp.deleteWatchlistItem(${data.id})"
                             class="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
                     </button>
@@ -126,7 +126,7 @@ const uiUpdater = {
         newItem.setAttribute('data-company', data.company_name);
         newItem.className = 'p-4 border-b border-gray-200 dark:border-gray-700';
         newItem.innerHTML = this.createWatchlistItemHTML(data);
-        
+
         elements.watchlistContainer.insertBefore(newItem, elements.watchlistContainer.firstChild);
     },
 
@@ -142,11 +142,11 @@ const uiUpdater = {
         // Update stock information
         const priceElement = element.querySelector('.stock-price');
         const changeElement = element.querySelector('.stock-change');
-        
+
         if (priceElement && data.stock_data?.current_price) {
             priceElement.textContent = `$${data.stock_data.current_price.toFixed(2)}`;
         }
-        
+
         if (changeElement && data.stock_data?.percent_change) {
             changeElement.textContent = `${data.stock_data.percent_change.toFixed(2)}%`;
             changeElement.className = `stock-change ${
@@ -173,7 +173,7 @@ const dashboardApp = {
         try {
             const data = await apiService.getWatchlistData();
             uiUpdater.updateMarketOverview(data);
-            
+
             // Update each watchlist item
             Object.entries(data).forEach(([company, info]) => {
                 const itemElement = document.querySelector(`[data-company="${company}"]`);
@@ -183,17 +183,20 @@ const dashboardApp = {
             });
         } catch (error) {
             console.error('Failed to refresh watchlist:', error);
-            alert('Failed to refresh watchlist data. Please try again later.');
+            // Only show the alert if the error is not due to unauthenticated access
+            if (error.message !== 'Unauthorized') {
+                alert('Failed to refresh watchlist data. Please try again later.');
+            }
         }
     },
 
     async handleWatchlistSubmit(e) {
         e.preventDefault();
-        
+
         try {
             const formData = new FormData(e.target);
             const data = await apiService.addToWatchlist(formData);
-            
+
             uiUpdater.addWatchlistItemToDOM(data);
             this.closeWatchlistModal();
             await this.refreshWatchlistData();
@@ -206,12 +209,12 @@ const dashboardApp = {
         if (!confirm('Are you sure you want to remove this company from your watchlist?')) {
             return;
         }
-        
+
         try {
             await apiService.deleteFromWatchlist(itemId);
             const item = document.getElementById(`watchlist-item-${itemId}`);
             item?.remove();
-            
+
             if (elements.watchlistContainer.children.length === 0) {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'p-4 text-center text-gray-500 dark:text-gray-400';
@@ -240,11 +243,12 @@ const dashboardApp = {
         // Set up event listeners
         elements.watchlistForm?.addEventListener('submit', (e) => this.handleWatchlistSubmit(e));
 
-        // Initial data load
-        this.refreshWatchlistData();
-
-        // Set up periodic refresh
-        setInterval(() => this.refreshWatchlistData(), CONFIG.REFRESH_INTERVAL);
+        // Check if the user is authenticated before initial data load
+        if (document.querySelector('[data-user-authenticated]')) {
+            this.refreshWatchlistData();
+            // Set up periodic refresh
+            setInterval(() => this.refreshWatchlistData(), CONFIG.REFRESH_INTERVAL);
+        }
     }
 };
 

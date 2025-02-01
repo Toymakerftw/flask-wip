@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from stock_collection import fetch_yfinance_data, resolve_ticker_symbol
 from news import fetch_articles
 import logging
-import requests
 from concurrent.futures import ThreadPoolExecutor
 import os
 
@@ -66,7 +65,7 @@ def signup():
             return redirect(url_for('signup'))
 
         new_user = User(
-            username=username, 
+            username=username,
             email=email,
             password=generate_password_hash(password, method='sha256')
         )
@@ -74,7 +73,7 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('signin'))
-    
+
     return render_template('signup.html')
 
 @app.route('/signin', methods=['GET', 'POST'])
@@ -87,10 +86,10 @@ def signin():
         if not user or not check_password_hash(user.password, password):
             flash('Invalid credentials')
             return redirect(url_for('signin'))
-        
+
         login_user(user)
         return redirect(url_for('dashboard'))
-    
+
     return render_template('signin.html')
 
 def fetch_company_data(company_name):
@@ -98,13 +97,13 @@ def fetch_company_data(company_name):
     try:
         # Resolve company name to ticker
         ticker = resolve_ticker_symbol(company_name)
-        
+
         # Fetch stock data
         stock_data = fetch_yfinance_data(ticker)
-        
+
         # Fetch news articles
         news_data = fetch_articles(company_name)[:5]  # Limit to 5 latest articles
-        
+
         return {
             'ticker': ticker,
             'stock_data': stock_data,
@@ -126,7 +125,7 @@ def fetch_company_data(company_name):
 def dashboard():
     watchlist = WatchlistItem.query.filter_by(user_id=current_user.id)\
         .order_by(WatchlistItem.created_at.desc()).all()
-    
+
     # Fetch initial data for watchlist companies
     company_data = {}
     for item in watchlist[:5]:  # Limit initial load to 5 companies
@@ -140,7 +139,7 @@ def dashboard():
                 'news': None,
                 'error': str(e)
             }
-    
+
     return render_template('dashboard.html',
                          username=current_user.username,
                          watchlist=watchlist,
@@ -151,37 +150,37 @@ def dashboard():
 def add_to_watchlist():
     try:
         company_name = request.form.get('company_name')
-        
+
         if not company_name:
             return jsonify({'error': 'Company name is required'}), 400
-            
+
         # Check if company already exists in user's watchlist
         existing_item = WatchlistItem.query.filter_by(
             user_id=current_user.id,
             company_name=company_name
         ).first()
-        
+
         if existing_item:
             return jsonify({'error': 'Company already in watchlist'}), 400
-        
+
         # Verify company exists by attempting to resolve ticker
         ticker = resolve_ticker_symbol(company_name)
-        
+
         # Create new watchlist item
         new_item = WatchlistItem(
             company_name=company_name,
             user_id=current_user.id
         )
-        
+
         db.session.add(new_item)
         db.session.commit()
-        
+
         return jsonify({
             'id': new_item.id,
             'company_name': new_item.company_name,
             'created_at': new_item.created_at.isoformat()
         }), 201
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -194,11 +193,11 @@ def add_to_watchlist():
 def delete_from_watchlist(item_id):
     try:
         item = WatchlistItem.query.get_or_404(item_id)
-        
+
         # Verify item belongs to current user
         if item.user_id != current_user.id:
             return jsonify({'error': 'Unauthorized'}), 403
-            
+
         db.session.delete(item)
         db.session.commit()
         return jsonify({'message': 'Item deleted successfully'}), 200
@@ -212,16 +211,16 @@ def delete_from_watchlist(item_id):
 def get_watchlist_data():
     try:
         watchlist = WatchlistItem.query.filter_by(user_id=current_user.id).all()
-        
+
         # Use ThreadPoolExecutor for parallel fetching
         with ThreadPoolExecutor(max_workers=5) as executor:
             # Create mapping of company names to their data
             company_data = {}
             futures = {
-                executor.submit(fetch_company_data, item.company_name): item.company_name 
+                executor.submit(fetch_company_data, item.company_name): item.company_name
                 for item in watchlist
             }
-            
+
             for future in futures:
                 company_name = futures[future]
                 try:
@@ -235,12 +234,12 @@ def get_watchlist_data():
                         'news': None,
                         'error': str(e)
                     }
-        
+
         return jsonify(company_data)
     except Exception as e:
         logger.error(f"Error getting watchlist data: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to fetch watchlist data'}), 500
-    
+
 @app.route('/logout', methods=['POST'])
 @login_required
 def logout():
