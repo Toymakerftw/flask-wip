@@ -23,6 +23,8 @@ class User(UserMixin, db.Model):
 class WatchlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    num_shares = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -84,9 +86,12 @@ def dashboard():
 @login_required
 def add_to_watchlist():
     company_name = request.form.get('company_name')
-    if not company_name:
-        return jsonify({'error': 'Company name is required'}), 400
-    
+    price = request.form.get('price', type=float)
+    num_shares = request.form.get('num_shares', type=int)
+
+    if not all([company_name, price, num_shares]):
+        return jsonify({'error': 'All fields are required'}), 400
+
     # Check if company already exists in user's watchlist
     existing_item = WatchlistItem.query.filter_by(
         user_id=current_user.id,
@@ -96,14 +101,20 @@ def add_to_watchlist():
     if existing_item:
         return jsonify({'error': 'Company already in watchlist'}), 400
     
-    new_item = WatchlistItem(company_name=company_name, user_id=current_user.id)
+    new_item = WatchlistItem(
+        company_name=company_name,
+        price=price,
+        num_shares=num_shares,
+        user_id=current_user.id
+    )
     db.session.add(new_item)
     db.session.commit()
     
     return jsonify({
         'id': new_item.id,
         'company_name': new_item.company_name,
-        'created_at': new_item.created_at.isoformat()
+        'price': new_item.price,
+        'num_shares': new_item.num_shares
     })
 
 @app.route('/watchlist/delete/<int:item_id>', methods=['DELETE'])
@@ -116,7 +127,6 @@ def delete_from_watchlist(item_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({'message': 'Item deleted successfully'})
-
 
 @app.route('/logout', methods=['POST'])
 @login_required
